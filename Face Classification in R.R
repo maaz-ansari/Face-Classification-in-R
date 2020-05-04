@@ -1,0 +1,48 @@
+library(OpenImageR)
+library(gdata)
+library(gtools)
+setwd('C:/Users/Maaz/Desktop/New folder (3)')
+name<-list.files( pattern="*.png")
+name<- mixedsort(name)
+name
+pic<-list()
+pf<- data.frame()
+for (i in 1:400) {pic[[i]]<-readImage(name[i])
+                  pic[[i]]<-resizeImage(pic[[i]],100,100)
+                  k<- unmatrix(pic[[i]],byrow = FALSE)
+                  pf<- rbind(pf,k)}
+list<-data.frame(c(rep(1,10),rep(10,10),rep(11,10),rep(12,10),rep(13,10),rep(14,10),rep(15,10),rep(16,10),rep(17,10),rep(18,10),rep(19,10),rep(2,10),rep(20,10),rep(21,10),rep(22,10),rep(23,10),rep(24,10),rep(25,10),rep(26,10),rep(27,10),rep(28,10),rep(29,10),rep(3,10),rep(30,10),rep(31,10),rep(32,10),rep(33,10),rep(34,10),rep(35,10),rep(36,10),rep(37,10),rep(38,10),rep(39,10),rep(4,10),rep(40,10),rep(5,10),rep(6,10),rep(7,10),rep(8,10),rep(9,10)))
+pca<- prcomp(pf)
+z<- pca$x[,1:107]
+f<- cbind(list,z)
+fix(f)
+set.seed(12345)
+ind<- sample(2,nrow(f),replace = T, prob =c( 0.7,0.3))
+train<- f[ind==1,]
+test<- f[ind==2,]
+library(MASS)
+library(nnet)
+fit.lda<- lda(train$list~.,data = train)
+pred1<- predict(fit.lda,newdata = test[,-1])
+t1<-table(pred1$class,test[,1])
+sum(diag(t1)/sum(t1))
+
+mul<- multinom(train$list~.,data = train,MaxNWts=4360)
+pred2<- predict(mul,newdata = test[,-1])
+t2<-table(pred2,test[,1])
+sum(diag(t2)/sum(t2))
+
+library(class)
+train_control <- trainControl(method="cv", number=10)
+model <- train(train[,-1],train[,1], data=train, trControl=train_control, method="knn")
+model1<- knn(train=train[,-1],test=test[,-1],cl=as.factor(train$list), k=1)
+t3<-table(model1,test$list)
+sum(diag(t3))/sum(t3) 
+
+e = data.frame(pca$rotation)
+m = matrix((e$PC1),nrow = 100,byrow = TRUE)
+image(m[,nrow(m):1],col = grey.colors(255))
+par(mfrow=c(1,2))
+ei <- pca$x[,1:400] %*% t(pca$rotation[,1:400])
+r<- matrix(data=rev(ei[1,]), nrow=100, ncol=100)
+image(1:100, 1:100, t(r), col=gray((0:255)/255))
